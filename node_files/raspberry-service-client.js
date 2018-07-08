@@ -86,19 +86,18 @@ sc.on('relay1', (data) => {
 });
 
 sc.on('relay2', (data) =>{
- var i=0;
  if(data.msg){
   RELAY2.writeSync(1);
   console.log('relay2 aktif : ', data.msg);
   updateRelay(RELAY_VIBRATION,true);
-
+  var i=0;
   VIBRATION.watch(function (err, value){
    if(value == 1){
     i++;
    }
    console.log('ada getaran gaes',i);
 
-   if(i%100 == 0){
+   if(i%1000 == 0){
    // createLogActivity(BASE_VIBRATION,"Vibration Notification", "Vibration detected on your vehicle");
     sc.emit('relay1', {msg:true});
    }
