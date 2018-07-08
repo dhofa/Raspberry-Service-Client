@@ -59,7 +59,7 @@ ARUS.watch(function(err, value){
 sc.on('relay1', (data) => {
  if(data.msg){
   console.log('relay1 aktif : ', data.msg);
-  RELAY1.writeSync(0);
+  RELAY1.writeSync(1);
   updateRelay(RELAY_BUZZER,true);
   createLogActivity(BASE_BUZZER,"Buzzer Notification", "Your Buzzer Already Running");
 
@@ -71,7 +71,7 @@ sc.on('relay1', (data) => {
   });
  }
  else{
-  RELAY1.writeSync(1);
+  RELAY1.writeSync(0);
   console.log('relay1 aktif : ', data.msg);
   updateRelay(RELAY_BUZZER,false);
   createLogActivity(BASE_BUZZER,"Buzzer Notification", "Your Buzzer Turned Off");
@@ -88,7 +88,7 @@ sc.on('relay1', (data) => {
 sc.on('relay2', (data) =>{
  var i=0;
  if(data.msg){
-  RELAY2.writeSync(0);
+  RELAY2.writeSync(1);
   console.log('relay2 aktif : ', data.msg);
   updateRelay(RELAY_VIBRATION,true);
 
@@ -109,7 +109,7 @@ sc.on('relay2', (data) =>{
 
   });
  }else{
-  RELAY2.writeSync(1);
+  RELAY2.writeSync(0);
   console.log('relay2 aktif : ', data.msg);
   updateRelay(RELAY_VIBRATION,false);
  }
@@ -118,12 +118,12 @@ sc.on('relay2', (data) =>{
 
 sc.on('relay3', (data) =>{
  if(data.msg){
-  RELAY3.writeSync(1);
+  RELAY3.writeSync(0);
   console.log('relay3 aktif : ', data.msg);
   updateRelay(RELAY_IGNITION,true);
   createLogActivity(BASE_IGNITION,"Ignition Notification", "Ignition state are OFF");
  }else{
-  RELAY3.writeSync(0);
+  RELAY3.writeSync(1);
   console.log('relay3 aktif : ', data.msg);
   updateRelay(RELAY_IGNITION,false);
   createLogActivity(BASE_IGNITION,"Ignition Notification", "Ignition state are ON");
@@ -132,11 +132,11 @@ sc.on('relay3', (data) =>{
 
 sc.on('relay4', (data) =>{
  if(data.msg){
-  RELAY4.writeSync(0);
+  RELAY4.writeSync(1);
   console.log('relay4 aktif : ', data.msg);
   //updateRelay(RELAY_IGNITION,true);
  }else{
-  RELAY4.writeSync(1);
+  RELAY4.writeSync(0);
   console.log('relay4 aktif : ', data.msg);
   //updateRelay(RELAY_IGNITION,false);
  }
