@@ -33,6 +33,7 @@ const BASE_RELAY_STATE = BASE_URL+"api/get-relay-state/${id_user}";
 //settup capture image
 const LOKASI_FOTO      = "/home/pi/FILE_FOTO/";
 const BASE_UPLOAD_FOTO = BASE_URL+"api/images/upload";
+const BASE_NOTIFICATION= BASE_URL+"api/notification/create/${id_user}";
 
 //settup state relay from API
 getStateRelay(BASE_RELAY_STATE,ID_USER);
@@ -216,6 +217,22 @@ function createLogActivity(url,title,message){
   };
 
   client.post(url, args, function (data, response) {
+    console.log(response);
+    console.log("Berhasil "+message);
+  });
+
+  createNotification(title, message);
+}
+
+
+function createNotification(title,message){
+  var args = {
+    path   : { "id_user": ID_USER },
+    data   : { title: title, message: message },
+    headers: { "Content-Type": "application/json" }
+  };
+
+  client.post(BASE_NOTIFICATION, args, function (data, response) {
     console.log(response);
     console.log("Berhasil "+message);
   });
