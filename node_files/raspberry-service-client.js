@@ -272,22 +272,23 @@ function getStateRelay(url,id_user){
 
   client.get(url, args, function (data, response) {
     console.log("state relay data ",data);
-    if(data.ignition){
+
+    if(data.buzzer){
+     RELAY1.writeSync(1);
+    }else{
+     RELAY1.writeSync(0);
+    }
+
+    if(data.ignition_off){
+     RELAY2.writeSync(1);
+    }else{
+     RELAY2.writeSync(0);
+    }
+
+    if(data.ignition_on){
      RELAY3.writeSync(1);
     }else{
      RELAY3.writeSync(0);
-    }
-
-    if(data.buzzer){
-     RELAY1.writeSync(0);
-    }else{
-     RELAY1.writeSync(1);
-    }
-
-    if(data.vibration){
-     RELAY2.writeSync(0);
-    }else{
-     RELAY2.writeSync(1);
     }
 
      RELAY4.writeSync(0);
