@@ -1,0 +1,10 @@
+[Unit]
+Description=Service Website with NodeJS
+After=multi-user.target
+
+[Service]
+Type=idle
+ExecStart=/usr/bin/node /home/pi/RMVTS/node_files/raspberry-service-client.js
+
+[Install]
+WantedBy=multi-user.target

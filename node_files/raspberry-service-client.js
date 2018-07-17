@@ -5,6 +5,7 @@ var sc = io.connect('https://rmvts.jagopesan.com/');
 var exec = require('child_process').exec;
 var gpio = require('onoff').Gpio;
 var Client = require('node-rest-client').Client;
+var sleep = require('sleep').sleep;
 var client = new Client();
 
 //declare Pin untuk relay
@@ -25,7 +26,8 @@ const BASE_VIBRATION = BASE_URL+"api/log-vibration/create/${id_user}";
 const BASE_IGNITION  = BASE_URL+"api/log-ignition/create/${id_user}";
 //Base Relay
 const RELAY_GPS      = BASE_URL+"api/update-relay/gps/${id_user}";
-const RELAY_IGNITION = BASE_URL+"api/update-relay/ignition/${id_user}";
+const RELAY_IGNITION_ON  = BASE_URL+"api/update-relay/ignition_on/${id_user}";
+const RELAY_IGNITION_OFF = BASE_URL+"api/update-relay/ignition_off/${id_user}";
 const RELAY_VIBRATION= BASE_URL+"api/update-relay/vibration/${id_user}";
 const RELAY_BUZZER   = BASE_URL+"api/update-relay/buzzer/${id_user}";
 const UPDATE_IGNITION= BASE_URL+"api/update-status-ignition/${id_user}";
@@ -46,14 +48,13 @@ ARUS.watch(function(err, value){
   console.log('Arus terdeteksi ');
 
   setTimeout(function(){
-   sc.emit('statusgps', {msg:true});
-  }, 5000);
+   sc.emit('activate_realtime_maps', {msg:true});
+  }, 60000);
 
   updateStatusIgnition(UPDATE_IGNITION,"Aktif");
 
  }else{
   console.log('tidak ada arus listrik ');
-  sc.emit('statusgps', {msg:false});
  }
 });
 
@@ -88,57 +89,83 @@ sc.on('relay1', (data) => {
 
 sc.on('relay2', (data) =>{
  if(data.msg){
-  RELAY2.writeSync(1);
+  RELAY2.writeSync(1); //untuk mematikan paksa
   console.log('relay2 aktif : ', data.msg);
-  updateRelay(RELAY_VIBRATION,true);
-  var i=0;
-  VIBRATION.watch(function (err, value){
-   if(value == 1){
-    i++;
-   }
-   console.log('ada getaran gaes',i);
-
-   if(i%1000 == 0){
-   // createLogActivity(BASE_VIBRATION,"Vibration Notification", "Vibration detected on your vehicle");
-    sc.emit('relay1', {msg:true});
-   }
-   // default 1 menit alarm mati
-   setTimeout(function(){
-    sc.emit('relay1', {msg:false});
-   },60000);
-
-  });
+  sc.emit('relay3', {msg:false});
+  console.log('relay 3 turned off'); //shoud save state relay again
+  sc.emit('relay4', {msg:false});
+  console.log('relay 4 turned off'); //shoud save state relay again
+  sc.emit('relay4_web_reply', {msg:true});
+  createLogActivity(BASE_IGNITION,"Turn Off Ignition", "You're Enable fitur turned OFF Ignition");
+  updateRelay(RELAY_IGNITION_OFF,true);
  }else{
   RELAY2.writeSync(0);
-  console.log('relay2 aktif : ', data.msg);
-  updateRelay(RELAY_VIBRATION,false);
+  createLogActivity(BASE_IGNITION,"Turn Off Ignition", "You're dissable fitur turned OFF Ignition");
+  updateRelay(RELAY_IGNITION_OFF,false);
  }
+});
 
+
+sc.on('vibration', (data) =>{
+ if(data.msg){
+  console.log('Vibration Active : ', data.msg);
+  updateRelay(RELAY_VIBRATION,true);
+
+  //mengaktifkan vibration service
+  exec('sudo systemctl start web-vibration.service', (err, stout, sterr) => {
+   if(err !== null){
+    console.log('exec error: ', err);
+   }
+  });
+
+ }else{
+  console.log('vibration turned off : ', data.msg);
+  updateRelay(RELAY_VIBRATION,false);
+
+  //mematikan vibration service
+  exec('sudo systemctl stop web-vibration.service', (err, stout, sterr) => {
+   if(err !== null){
+    console.log('exec error: ', err);
+   }
+  });
+ }
 });
 
 sc.on('relay3', (data) =>{
  if(data.msg){
-  RELAY3.writeSync(0);
-  console.log('relay3 aktif : ', data.msg);
-  updateRelay(RELAY_IGNITION,true);
-  createLogActivity(BASE_IGNITION,"Ignition Notification", "Ignition state are OFF");
- }else{
   RELAY3.writeSync(1);
-  console.log('relay3 aktif : ', data.msg);
-  updateRelay(RELAY_IGNITION,false);
-  createLogActivity(BASE_IGNITION,"Ignition Notification", "Ignition state are ON");
+  console.log('vehicle on..');
+  updateRelay(RELAY_IGNITION_ON,true);
+  createLogActivity(BASE_IGNITION,"Ignition Notification", "Ignition state are turned on");
+ }else{
+  RELAY3.writeSync(0);
+  RELAY4.writeSync(0);
+  console.log('vehicle off : ');
+  updateRelay(RELAY_IGNITION_ON,false);
+  createLogActivity(BASE_IGNITION,"Ignition Notification", "Ignition state are turned off");
  }
 });
+
 
 sc.on('relay4', (data) =>{
  if(data.msg){
   RELAY4.writeSync(1);
-  console.log('relay4 aktif : ', data.msg);
-  //updateRelay(RELAY_IGNITION,true);
+  console.log('starting up machine..');
  }else{
   RELAY4.writeSync(0);
-  console.log('relay4 aktif : ', data.msg);
-  //updateRelay(RELAY_IGNITION,false);
+  console.log('stop starting up : ');
+ }
+});
+
+
+sc.on('relay4_web', (data) =>{
+ if(data.msg){
+  RELAY4.writeSync(1);
+  console.log('starting up machine..');
+  sleep(1);
+  RELAY4.writeSync(0);
+  console.log('stop starting up machine..');
+  sc.emit('relay4_web_reply', {msg:true});
  }
 });
 
@@ -157,15 +184,13 @@ sc.on('ambilfoto', (data) => {
  });
 });
 
-sc.on('statusgps', (data) => {
+sc.on('activate_realtime_gps', (data) => {
  if(data.msg){
   console.log('menjalankan GPS');
   updateRelay(RELAY_GPS,true);
-  exec('sudo systemctl start gps-python.service', (err, stout, sterr) => {
-  // console.log('stout: ', stout);
-  // console.log('sterr: ', sterr);
+  exec('sudo systemctl start web-log-gps.service', (err, stout, sterr) => {
    if(err !== null){
-    console.log('exec error: ', err);
+    console.log('start log gps error: ', err);
     updateRelay(RELAY_GPS,false);
    }
   });
@@ -173,11 +198,10 @@ sc.on('statusgps', (data) => {
  else{
   console.log('menghentikan GPS');
   updateRelay(RELAY_GPS,false);
-  exec('sudo systemctl stop gps-python.service', (err, stout, sterr) => {
-  // console.log('stout: ', stout);
-  // console.log('sterr: ', sterr);
+  exec('sudo systemctl stop web-log-gps.service', (err, stout, sterr) => {
    if(err !== null){
-    console.log('exec error: ', err);
+    console.log('stop log gps error: ', err);
+    updateRelay(RELAY_GPS,false);
    }
   });
  }
