@@ -45,7 +45,7 @@ ARUS.watch(function(err, value){
   console.log('Error while Watching Current Sensor..');
  }
  if(value == 1){
-  console.log('Arus terdeteksi ');
+  console.log('Arus terdeteksi !');
 
   setTimeout(function(){
    sc.emit('activate_realtime_maps', {msg:true});
@@ -60,7 +60,7 @@ ARUS.watch(function(err, value){
 
 sc.on('relay1', (data) => {
  if(data.msg){
-  console.log('relay1 aktif : ', data.msg);
+  console.log('relay1 aktif');
   RELAY1.writeSync(1);
   updateRelay(RELAY_BUZZER,true);
   createLogActivity(BASE_BUZZER,"Buzzer Notification", "Your Buzzer Already Running");
@@ -74,9 +74,9 @@ sc.on('relay1', (data) => {
  }
  else{
   RELAY1.writeSync(0);
-  console.log('relay1 aktif : ', data.msg);
+  console.log('relay1 non aktif');
   updateRelay(RELAY_BUZZER,false);
-  createLogActivity(BASE_BUZZER,"Buzzer Notification", "Your Buzzer Turned Off");
+  createLogActivity(BASE_BUZZER,"Buzzer Turned Off", "Your Buzzer Turned Off");
 
   //menonaktifkan alarm
   exec('sudo systemctl stop buzzer.service', (err, stout, sterr) => {
@@ -89,8 +89,9 @@ sc.on('relay1', (data) => {
 
 sc.on('relay2', (data) =>{
  if(data.msg){
-  RELAY2.writeSync(1); //untuk mematikan paksa
-  console.log('relay2 aktif : ', data.msg);
+  RELAY2.writeSync(0); //untuk mematikan paksa
+  console.log('cut off ignition on');
+  console.log('relay 2 turned off');
   sc.emit('relay3', {msg:false});
   console.log('relay 3 turned off'); //shoud save state relay again
   sc.emit('relay4', {msg:false});
@@ -99,7 +100,8 @@ sc.on('relay2', (data) =>{
   createLogActivity(BASE_IGNITION,"Turn Off Ignition", "You're Enable fitur turned OFF Ignition");
   updateRelay(RELAY_IGNITION_OFF,true);
  }else{
-  RELAY2.writeSync(0);
+  RELAY2.writeSync(1);
+  console.log('relay 2 turned on');
   createLogActivity(BASE_IGNITION,"Turn Off Ignition", "You're dissable fitur turned OFF Ignition");
   updateRelay(RELAY_IGNITION_OFF,false);
  }
@@ -108,7 +110,8 @@ sc.on('relay2', (data) =>{
 
 sc.on('vibration', (data) =>{
  if(data.msg){
-  console.log('Vibration Active : ', data.msg);
+  console.log('Vibration Active..');
+  console.log('Parking Mode On..');
   updateRelay(RELAY_VIBRATION,true);
 
   //mengaktifkan vibration service
@@ -119,7 +122,9 @@ sc.on('vibration', (data) =>{
   });
 
  }else{
-  console.log('vibration turned off : ', data.msg);
+  console.log('vibration turned off : ');
+  console.log('Parking Mode Turned Off..');
+
   updateRelay(RELAY_VIBRATION,false);
 
   //mematikan vibration service
@@ -134,13 +139,13 @@ sc.on('vibration', (data) =>{
 sc.on('relay3', (data) =>{
  if(data.msg){
   RELAY3.writeSync(1);
-  console.log('vehicle on..');
+  console.log('vehicle electricity on..');
   updateRelay(RELAY_IGNITION_ON,true);
   createLogActivity(BASE_IGNITION,"Ignition Notification", "Ignition state are turned on");
  }else{
   RELAY3.writeSync(0);
   RELAY4.writeSync(0);
-  console.log('vehicle off : ');
+  console.log('vehicle electricity off..');
   updateRelay(RELAY_IGNITION_ON,false);
   createLogActivity(BASE_IGNITION,"Ignition Notification", "Ignition state are turned off");
  }
@@ -153,7 +158,7 @@ sc.on('relay4', (data) =>{
   console.log('starting up machine..');
  }else{
   RELAY4.writeSync(0);
-  console.log('stop starting up : ');
+  console.log('stop starting up..');
  }
 });
 
@@ -216,7 +221,7 @@ function updateRelay(url, status){
   };
 
   client.post(url, args, function (data, response) {
-    console.log("Berhasil Update Relay..");
+    //console.log("Berhasil Update Relay..");
   });
 }
 
@@ -228,7 +233,7 @@ function updateStatusIgnition(url, status){
   };
 
   client.post(url, args, function (data, response) {
-    console.log("Berhasil Update Relay..");
+    console.log("Berhasil Update Relay Ignition..");
   });
 }
 
@@ -242,7 +247,7 @@ function createLogActivity(url,title,message){
 
   client.post(url, args, function (data, response) {
     console.log(response);
-    console.log("Berhasil "+message);
+    //console.log("Berhasil "+message);
   });
 
   createNotification(title, message);
@@ -257,8 +262,8 @@ function createNotification(title,message){
   };
 
   client.post(BASE_NOTIFICATION, args, function (data, response) {
-    console.log(response);
-    console.log("Berhasil "+message);
+    //console.log(response);
+    console.log("Notifikasi berhasil dikirim.. \n pesan =>"+message);
   });
 }
 
