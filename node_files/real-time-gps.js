@@ -1,7 +1,5 @@
 var io = require('socket.io-client');
 var sc = io.connect('https://rmvts.jagopesan.com/');
-//var sc = io.connect('https://rmvts.herokuapp.com/');
-//var sc = io.connect('http://192.168.8.101:3000/');
 var Client = require('node-rest-client').Client;
 var sleep = require('sleep').sleep;
 var client = new Client();
@@ -20,24 +18,28 @@ var port = new SerialPort('/dev/ttyS0', { // change path
 });
 
 
-gps.on('data', function(data) {
+gps.on('data', data => {
 //  console.log('latitude  :',gps.state.lat);
 //  console.log('longitude :',gps.state.lon);
-//  console.log(data);
+//  console.log(data,gps.state);
 
    // save Data Gps
-   if(data.lat != 0 && data.long != 0){
-    console.log('latitude  :',data.lat);
-    console.log('longitude :',data.lon);
+   if (typeof data.lat === "undefined" || typeof data.lon === "undefined"){
+     console.log('data GPS undefined');
+   }else{
+    if(data.lat != 0.0 && data.lon != 0.0 && data.lat !== null && data.lon !== null){
+     console.log('latitude  :',data.lat);
+     console.log('longitude :',data.lon);
 
-    sc.emit('send_data_to_server', {latitude: data.lat, longitude: data.lon});
-    setTimeout(function(){
-      saveDataGPS(data.lat, data.lon);
-    },5000);
+     sc.emit('send_data_to_server', {latitude: data.lat, longitude: data.lon});
+//     setTimeout(function(){
+//       saveDataGPS(data.lat, data.lon);
+//     },10000);
+    }
    }
 });
 
-port.on('data', function(data) {
+port.on('data', data=> {
   gps.updatePartial(data);
 });
 

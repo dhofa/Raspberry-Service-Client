@@ -48,7 +48,7 @@ ARUS.watch(function(err, value){
   console.log('Arus terdeteksi !');
 
   setTimeout(function(){
-   sc.emit('activate_realtime_maps', {msg:true});
+   sc.emit('activate_realtime_gps', {msg:true});
   }, 60000);
 
   updateStatusIgnition(UPDATE_IGNITION,"Aktif");
@@ -117,20 +117,17 @@ sc.on('vibration', (data) =>{
   //mengaktifkan vibration service
   exec('sudo systemctl start web-vibration.service', (err, stout, sterr) => {
    if(err !== null){
-    console.log('exec error: ', err);
+    console.log('Error mengaktifkan vibration service');
    }
   });
 
  }else{
-  console.log('vibration turned off : ');
   console.log('Parking Mode Turned Off..');
-
   updateRelay(RELAY_VIBRATION,false);
-
   //mematikan vibration service
   exec('sudo systemctl stop web-vibration.service', (err, stout, sterr) => {
    if(err !== null){
-    console.log('exec error: ', err);
+    console.log('Error menghentikan vibration service');
    }
   });
  }
@@ -191,22 +188,55 @@ sc.on('ambilfoto', (data) => {
 
 sc.on('activate_realtime_gps', (data) => {
  if(data.msg){
-  console.log('menjalankan GPS');
-  updateRelay(RELAY_GPS,true);
+  console.log('menjalankan Realtime GPS');
+  //mematikan service python Gps
+  exec('sudo systemctl stop web-python-gps.service', (err, stout, sterr) => {
+   if(err !== null){
+    console.log('Error menghentikan python gps Service');
+   }
+   updateRelay(RELAY_GPS,false);
+  });
   exec('sudo systemctl start web-log-gps.service', (err, stout, sterr) => {
    if(err !== null){
-    console.log('start log gps error: ', err);
+    console.log('Error mengaktifkan node Gps Service');
+   }
+  });
+ }
+ else{
+  console.log('menghentikan Realtime GPS');
+  exec('sudo systemctl stop web-log-gps.service', (err, stout, sterr) => {
+   if(err !== null){
+    console.log('Error menghentikan node gps service');
+   }
+  });
+ }
+});
+
+sc.on('activate_python_gps', (data) => {
+ if(data.msg){
+  console.log('menjalankan service python GPS');
+  updateRelay(RELAY_GPS,true);
+  //menghentikan service node.js
+  exec('sudo systemctl stop web-log-gps.service', (err, stout, sterr) => {
+   if(err !== null){
+    console.log('Error menghentikan node gps service');
+   }
+  });
+
+  exec('sudo systemctl start web-python-gps.service', (err, stout, sterr) => {
+   if(err !== null){
+    console.log('Error mengaktifkan python gps service');
     updateRelay(RELAY_GPS,false);
    }
   });
  }
  else{
-  console.log('menghentikan GPS');
+  console.log('menghentikan python gps service');
   updateRelay(RELAY_GPS,false);
+
   exec('sudo systemctl stop web-log-gps.service', (err, stout, sterr) => {
    if(err !== null){
     console.log('stop log gps error: ', err);
-    updateRelay(RELAY_GPS,false);
    }
   });
  }
@@ -246,7 +276,7 @@ function createLogActivity(url,title,message){
   };
 
   client.post(url, args, function (data, response) {
-    console.log(response);
+    //console.log(response);
     //console.log("Berhasil "+message);
   });
 
@@ -297,6 +327,12 @@ function getStateRelay(url,id_user){
     }
 
      RELAY4.writeSync(0);
+
+    if(data.realtime_gps){
+     sc.emit('activate_python_gps', {msg:true});
+    }else{
+     sc.emit('activate_python_gps', {msg:false});
+    }
 
   });
 }

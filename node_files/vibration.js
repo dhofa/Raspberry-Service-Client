@@ -21,7 +21,7 @@ VIBRATION.watch(function (err, value){
     i++;
    }
    console.log('Vibration are detected',i);
-   if(i%100 == 0){
+   if(i%500 == 0){
    // createLogActivity(BASE_VIBRATION,"Vibration Notification", "Vibration d$
     sc.emit('relay1', {msg:true});
     //createLogActivity(BASE_VIBRATION,"Vibration Notification", "Vibration detected with value please check in the app..");
@@ -29,7 +29,7 @@ VIBRATION.watch(function (err, value){
    // default 1 menit alarm mati
    setTimeout(function(){
     sc.emit('relay1', {msg:false});
-   },60000);
+   },30000);
 });
 
 function createLogActivity(url,title,message){

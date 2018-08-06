@@ -12,7 +12,7 @@
     "gps": "^0.4.7",
     "node-rest-client": "^3.1.0",
     "onoff": "^3.1.0",
-    "serialport": "^6.2.1",
+    "serialport": "^6.2.2",
     "sleep": "^5.1.1",
     "socket.io-client": "^2.1.1"
   }
